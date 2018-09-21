@@ -21,7 +21,7 @@ show_help(){
     echo  " ** "  
     echo  " ** Warning: this script is meant to be used in CDH < 5.9.2 or Impala < 2.8.0"
     echo  " ** In CDH 5.9.2 and above (or Impala 2.8.0 and above) "
-    echo  " ** this should not be necessary (see IMPALA-3983 and IMPALA-3983)."
+    echo  " ** this should not be necessary (see IMPALA-3974 and IMPALA-3983)."
     echo  " ** "  
     echo  " *****************************************************************************"
     echo  " *****************************************************************************"
