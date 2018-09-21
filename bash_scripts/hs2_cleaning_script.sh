@@ -1,5 +1,6 @@
 #!/bin/bash
 
+JAVA_IO_TMPDIR_DEFAULT=/tmp
 TEMPFILE=/tmp/$$.tmp
 
 log() {
