@@ -55,6 +55,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             logging.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
             execute_script("hs2_cleaning_script.sh", ["1"])
+    elif role_type == "GATEWAY" and service_type == "HIVE":
+        logging.info(
+            "Running hive hadoop-unjar cleaning script")
+        execute_script("hive_hadoop_unjar_cleaning.sh", ["7"])
     elif role_type == "GATEWAY" and service_type == "SQOOP_CLIENT":
         logging.info("Running {0} {1} cleaning.".format(service_type, role_type))
         execute_script("cloudera_cleaner_script.sh", ["--sqoop"])

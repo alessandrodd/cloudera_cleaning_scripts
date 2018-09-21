@@ -7,17 +7,17 @@ log() {
 }
 
 show_help(){
-    echo  "HiveServer2 Resources Cleaner Utility"
+    echo  "Hadoop Unjar Cleaner Utility"
     echo  " *****************************************************************************"
     echo  " *****************************************************************************"
     echo  " ** "  
-    echo  " ** Warning: this script is meant to be used in CDH < 5.12.0 or Hive < 1.3.0 ."
-    echo  " ** For CDH 5.12.0 and above (or Hive 1.3.0 and above) this script should not be needed (see HIVE-11878)."
+    echo  " ** This script is meant to solve the problem of orphan unjar folders caused by failed MapredLocalTask"
+    echo  " ** See https://my.cloudera.com/knowledge/Hive-Client-System--Temporary-quotunjarredquot-Files-Remain?id=70157"
     echo  " ** "  
     echo  " *****************************************************************************"
     echo  " *****************************************************************************"
     echo  "Usage: $0 [days]" 
-    echo  "          Search and deletes all hiveserver2 resources folder older than [days] days."
+    echo  "          Search and deletes all hadoop-unjar folder older than [days] days."
 
 }
 
@@ -35,11 +35,16 @@ if [[ -z "${JAVA_IO_TMPDIR// }" ]]; then
     JAVA_IO_TMPDIR=$JAVA_IO_TMPDIR_DEFAULT
 fi
 if cd ${JAVA_IO_TMPDIR}; then
-    for directory in $(find . -regextype posix-extended -regex './[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_resources' -user hive -mtime +$1); do 
+    for directory in $(find . -regextype posix-extended -regex './hadoop-unjar[0-9]+' -mtime +$1); do 
         echo $directory
-        rm -r $directory
-        COUNTER=$(($(cat $TEMPFILE) + 1))
-        echo $COUNTER > $TEMPFILE
+        # dirty check if foder is in use
+        if [[ $(lsof $directory) ]]; then
+            echo "some file here is currently in use"
+        else
+            rm -r $directory
+            COUNTER=$(($(cat $TEMPFILE) + 1))
+            echo $COUNTER > $TEMPFILE
+        fi
     done
 fi
 log "Deleted $(cat $TEMPFILE) files."
