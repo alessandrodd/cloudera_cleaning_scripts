@@ -8,7 +8,7 @@ should_clean_hdfs=false
 should_clean_hive=false
 should_clean_sqoop=false
 
-SQOOP_CLEANING_LIMIT_DAYS=3
+SQOOP_CLEANING_LIMIT_DAYS=1
 SQOOP_TMP_DIR="/tmp"
 
 log() {
