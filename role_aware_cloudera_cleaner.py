@@ -39,11 +39,11 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             execute_script("cloudera_cleaner_script.sh", ["--hdfs"])
         else:
             logging.info("Not running {0} {1} cleaning because this host is not the leader.".format(service_type, role_type))
-    elif role_type == "HUE_SERVER" and service_type == "HUE":
+    if role_type == "HUE_SERVER" and service_type == "HUE":
         logging.info(
             "Running hue templates compile files cleaning script")
         execute_script("hue_cleaning_script.sh", ["1"])
-    elif role_type == "HIVEMETASTORE" and service_type == "HIVE":
+    if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
                 logging.info(
@@ -54,7 +54,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
                 execute_script("cloudera_cleaner_script.sh", ["--hive"])
         else:
             logging.info("Not running {0} {1} cleaning because this host is not the leader.".format(service_type, role_type))
-    elif role_type == "HIVESERVER2" and service_type == "HIVE":
+    if role_type == "HIVESERVER2" and service_type == "HIVE":
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
             logging.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
@@ -68,10 +68,13 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         # (the Sqoop gateway seems not to be necessary for worker nodes)
         logging.info("Running {0} {1} cleaning.".format(service_type, role_type))
         execute_script("cloudera_cleaner_script.sh", ["--sqoop"])
-    elif role_type == "CATALOGSERVER" and service_type == "IMPALA":
+    if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logging.info("Running {0} {1} cleaning.".format(service_type, role_type))
             execute_script("impala_cleaning_script.sh", ["60"])
+    if role_type == "REGIONSERVER" and service_type == "HBASE":
+        logging.info("Running Phoenix {0} {1} cleaning.".format(service_type, role_type))
+        execute_script("phoenix_cleaning_script.sh", ["3"])
 
 
 def is_role_leader(service, role_type, role_name):
