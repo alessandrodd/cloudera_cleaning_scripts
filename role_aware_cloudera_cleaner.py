@@ -7,6 +7,9 @@ import argparse
 import logging
 import socket
 import ConfigParser
+import urllib
+import tempfile
+import shutil
 from distutils.version import StrictVersion
 from subprocess import Popen, PIPE, STDOUT
 from cm_api.api_client import ApiResource
@@ -16,6 +19,7 @@ API_VERSION = 10
 script_path = os.path.dirname(os.path.realpath(__file__))
 bash_scripts_path = os.path.join(script_path, "bash_scripts")
 
+kerberized = False
 debug_mode = False
 
 
@@ -30,9 +34,13 @@ def execute_script(script_name, args):
               stderr=STDOUT, close_fds=True)
     output = p.communicate()[0]
     logging.info(output)
-
+    
 
 def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
+    if kerberized:
+        logging.info("Retrieving ticket for role {0}, service {1}".format(role_type, service_type))
+        execute_script("retrieve_kerberos_ticket.sh", [role_type, service_type])
+        
     if role_type == "NAMENODE" and service_type == "HDFS":
         if is_leader:
             logging.info("Host is leader, running {0} {1} cleaning.".format(service_type, role_type))
@@ -137,6 +145,8 @@ def main():
     parser.add_argument(
         '--cm-pass', type=str, help='Cloudera Manager user\'s password', required=False)
     parser.add_argument(
+        '--kerberized', help='Try to download and use the role keytab before executing actions', action='store_true')
+    parser.add_argument(
         '--debug-mode', help='Prints only the shell scripts without actually running them', action='store_true')
     # Array for all arguments passed to script
     args = parser.parse_args()
@@ -148,6 +158,8 @@ def main():
     cm_port = config.get("Main", "cm_port")
     cm_user = config.get("Main", "cm_user")
     cm_pass = config.get("Main", "cm_pass")
+    global kerberized
+    kerberized = config.get("Main", "kerberized")
 
     # Override config values from commandline arguments
     if args.cm_host is not None:
@@ -158,7 +170,9 @@ def main():
         cm_user = args.cm_user
     if args.cm_pass is not None:
         cm_pass = args.cm_pass
-
+    if args.kerberized is not None:
+        kerberized = args.kerberized
+    
     global debug_mode
     debug_mode = args.debug_mode
 
