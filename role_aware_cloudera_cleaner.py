@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import logging
+from logging.handlers import RotatingFileHandler
 import socket
 import ConfigParser
 import urllib
@@ -15,6 +16,11 @@ from subprocess import Popen, PIPE, STDOUT
 from cm_api.api_client import ApiResource
 
 API_VERSION = 10
+
+logger = logging.getLogger(__name__)
+logger.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 bash_scripts_path = os.path.join(script_path, "bash_scripts")
@@ -28,60 +34,69 @@ def execute_script(script_name, args):
     cmd = [full_path]
     cmd = cmd + args
     if debug_mode:
-        logging.debug(" ".join(map(str, cmd)))
+        logger.debug(" ".join(map(str, cmd)))
         return
     p = Popen(cmd, shell=False, stdin=PIPE, stdout=PIPE,
               stderr=STDOUT, close_fds=True)
     output = p.communicate()[0]
-    logging.info(output)
-    
+    logger.info(output)
+
 
 def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
     if kerberized:
-        logging.info("Retrieving ticket for role {0}, service {1}".format(role_type, service_type))
-        execute_script("retrieve_kerberos_ticket.sh", [role_type, service_type])
-        
+        logger.info("Retrieving ticket for role {0}, service {1}".format(
+            role_type, service_type))
+        execute_script("retrieve_kerberos_ticket.sh",
+                       [role_type, service_type])
+
     if role_type == "NAMENODE" and service_type == "HDFS":
         if is_leader:
-            logging.info("Host is leader, running {0} {1} cleaning.".format(service_type, role_type))
+            logger.info("Host is leader, running {0} {1} cleaning.".format(
+                service_type, role_type))
             execute_script("cloudera_cleaner_script.sh", ["--hdfs"])
         else:
-            logging.info("Not running {0} {1} cleaning because this host is not the leader.".format(service_type, role_type))
+            logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
+                service_type, role_type))
     if role_type == "HUE_SERVER" and service_type == "HUE":
-        logging.info(
+        logger.info(
             "Running hue templates compile files cleaning script")
         execute_script("hue_cleaning_script.sh", ["1"])
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
-                logging.info(
+                logger.info(
                     "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
                 execute_script("hive_cleaning_script.sh", ["7"])
             else:
-                logging.info("Host is leader, running {0} {1} cleaning.".format(service_type, role_type))
+                logger.info("Host is leader, running {0} {1} cleaning.".format(
+                    service_type, role_type))
                 execute_script("cloudera_cleaner_script.sh", ["--hive"])
         else:
-            logging.info("Not running {0} {1} cleaning because this host is not the leader.".format(service_type, role_type))
+            logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
+                service_type, role_type))
     if role_type == "HIVESERVER2" and service_type == "HIVE":
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
-            logging.info(
+            logger.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
             execute_script("hs2_cleaning_script.sh", ["1"])
     if (role_type == "GATEWAY" and service_type == "HIVE") or (role_type == "NODEMANAGER" and service_type == "YARN"):
-        logging.info(
+        logger.info(
             "Running hive hadoop-unjar cleaning script")
         execute_script("hive_hadoop_unjar_cleaning.sh", ["7"])
     if (role_type == "GATEWAY" and service_type == "SQOOP_CLIENT") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         # Try to clean sqoop even if there is no sqoop gateway but there is a YARN nodemanager role
         # (the Sqoop gateway seems not to be necessary for worker nodes)
-        logging.info("Running {0} {1} cleaning.".format(service_type, role_type))
+        logger.info("Running {0} {1} cleaning.".format(
+            service_type, role_type))
         execute_script("cloudera_cleaner_script.sh", ["--sqoop"])
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
-            logging.info("Running {0} {1} cleaning.".format(service_type, role_type))
+            logger.info("Running {0} {1} cleaning.".format(
+                service_type, role_type))
             execute_script("impala_cleaning_script.sh", ["60"])
     if role_type == "REGIONSERVER" and service_type == "HBASE":
-        logging.info("Running Phoenix {0} {1} cleaning.".format(service_type, role_type))
+        logger.info("Running Phoenix {0} {1} cleaning.".format(
+            service_type, role_type))
         execute_script("phoenix_cleaning_script.sh", ["3"])
 
 
@@ -90,7 +105,7 @@ def is_role_leader(service, role_type, role_name):
     Given the complete list of roles for a particular service, the leader
     for a role type is simply the role instance whose role name is the 
     first alfabetically among all roles with the same role type."""
-    logging.debug("Role name: {0}".format(role_name))
+    logger.debug("Role name: {0}".format(role_name))
     for role in service.get_all_roles():
         if role.type and role.type == role_type and role.name < role_name:
             return False
@@ -98,9 +113,9 @@ def is_role_leader(service, role_type, role_name):
 
 
 def clean_host(cm_api):
-    # use getfqdn to get complete hostname, i.e. hostname+domain etc. 
+    # use getfqdn to get complete hostname, i.e. hostname+domain etc.
     my_hostname = socket.getfqdn()
-    logging.debug("My Hostname: {0}".format(my_hostname))
+    logger.debug("My Hostname: {0}".format(my_hostname))
     hosts = cm_api.get_all_hosts(view="full")
     for host in hosts:
         if host.hostname == my_hostname:
@@ -112,7 +127,7 @@ def clean_host(cm_api):
                     cluster_version = cluster.fullVersion
                     service = cluster.get_service(ref.serviceName)
                 else:
-                    # if there is no cluster name, than we are looking at Cloudera MGMT service 
+                    # if there is no cluster name, than we are looking at Cloudera MGMT service
                     cluster_name = None
                     cluster_version = None
                     cm = cm_api.get_cloudera_manager()
@@ -125,13 +140,9 @@ def clean_host(cm_api):
                                  role_type, is_leader)
             break
 
-logging.getLogger("requests").setLevel(logging.INFO)
-logging.getLogger("cm_api.http_client").setLevel(logging.INFO)
 
 def main():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M:%S')
+
 
     parser = argparse.ArgumentParser(
         description='Script that executes the necessary cleaning operations depending on the host roles. Queries the Cloudera Manager host to retrieve role information.\nCommand line arguments overrides values defined in config.ini')
@@ -148,18 +159,23 @@ def main():
         '--kerberized', help='Try to download and use the role keytab before executing actions', action='store_true')
     parser.add_argument(
         '--debug-mode', help='Prints only the shell scripts without actually running them', action='store_true')
+    parser.add_argument(
+        '--log-file', type=str, help='Path for the log file', required=False)
     # Array for all arguments passed to script
     args = parser.parse_args()
 
     # parse the configuration file
     config = ConfigParser.ConfigParser()
-    config.read(os.path.join(script_path,"config.ini"))
+    config.read(os.path.join(script_path, "config.ini"))
     cm_host = config.get("Main", "cm_host")
     cm_port = config.get("Main", "cm_port")
     cm_user = config.get("Main", "cm_user")
     cm_pass = config.get("Main", "cm_pass")
     global kerberized
     kerberized = config.get("Main", "kerberized")
+
+    log_file = None
+    maxbytes = 200000000
 
     # Override config values from commandline arguments
     if args.cm_host is not None:
@@ -172,7 +188,13 @@ def main():
         cm_pass = args.cm_pass
     if args.kerberized is not None:
         kerberized = args.kerberized
-    
+    if args.log_file is not None:
+        log_file = args.log_file
+
+    if log_file is not None:
+        handler = RotatingFileHandler(args.log_file, maxBytes=maxbytes, backupCount=5)
+        logger.addHandler(handler)
+
     global debug_mode
     debug_mode = args.debug_mode
 
