@@ -41,18 +41,18 @@ def execute_script(script_name, args):
     output = p.communicate()[0]
     logger.info(output)
 
+
 def retrieve_kerberos_ticket(role_type, service_type):
-    role_type=role_type.upper()
-    service_type=service_type.lower()
+    role_type = role_type.upper()
+    service_type = service_type.lower()
     if kerberized:
         logger.info("Retrieving ticket for role {0}, service {1}".format(
             role_type, service_type))
         execute_script("retrieve_kerberos_ticket.sh",
-                    [role_type, service_type])
+                       [role_type, service_type])
+
 
 def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
-
-
     if role_type == "NAMENODE" and service_type == "HDFS":
         if is_leader:
             retrieve_kerberos_ticket(role_type, service_type)
@@ -151,7 +151,6 @@ def clean_host(cm_api):
 
 def main():
 
-
     parser = argparse.ArgumentParser(
         description='Script that executes the necessary cleaning operations depending on the host roles. Queries the Cloudera Manager host to retrieve role information.\nCommand line arguments overrides values defined in config.ini')
     # Add arguments
@@ -183,7 +182,7 @@ def main():
     kerberized = config.getboolean("Main", "kerberized")
 
     log_file = None
-    maxbytes = 200000000
+    maxbytes = 20000000
 
     # Override config values from commandline arguments
     if args.cm_host is not None:
@@ -200,7 +199,8 @@ def main():
         log_file = args.log_file
 
     if log_file is not None:
-        handler = RotatingFileHandler(args.log_file, maxBytes=maxbytes, backupCount=5)
+        handler = RotatingFileHandler(
+            args.log_file, maxBytes=maxbytes, backupCount=5)
         logger.addHandler(handler)
 
     global debug_mode
