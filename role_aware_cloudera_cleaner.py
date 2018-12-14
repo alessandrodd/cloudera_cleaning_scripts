@@ -33,7 +33,7 @@ def execute_script(script_name, args):
     full_path = os.path.join(bash_scripts_path, script_name)
     cmd = [full_path]
     cmd = cmd + args
-    if debug_mode:
+    if debug_mode is not None and debug_mode is False:
         logger.debug(" ".join(map(str, cmd)))
         return
     p = Popen(cmd, shell=False, stdin=PIPE, stdout=PIPE,
@@ -42,8 +42,8 @@ def execute_script(script_name, args):
     logger.info(output)
 
 def retrieve_kerberos_ticket(role_type, service_type):
-    role_type=role_type.lower()
-    service_type=service_type.upper()
+    role_type=role_type.upper()
+    service_type=service_type.lower()
     if kerberized:
         logger.info("Retrieving ticket for role {0}, service {1}".format(
             role_type, service_type))
