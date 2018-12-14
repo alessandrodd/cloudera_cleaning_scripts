@@ -17,10 +17,10 @@ from cm_api.api_client import ApiResource
 
 API_VERSION = 10
 
-logger = logging.getLogger(__name__)
-logger.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 bash_scripts_path = os.path.join(script_path, "bash_scripts")
