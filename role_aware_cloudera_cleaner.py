@@ -44,7 +44,7 @@ def execute_script(script_name, args):
 def retrieve_kerberos_ticket(role_type, service_type):
     if kerberized:
         logger.info("Retrieving ticket for role {0}, service {1}".format(
-            role_type, service_type))
+            role_type.lower(), service_type.upper()))
         execute_script("retrieve_kerberos_ticket.sh",
                     [role_type, service_type])
 
