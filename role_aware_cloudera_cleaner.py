@@ -41,28 +41,34 @@ def execute_script(script_name, args):
     output = p.communicate()[0]
     logger.info(output)
 
-
-def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
+def retrieve_kerberos_ticket(role_type, service_type):
     if kerberized:
         logger.info("Retrieving ticket for role {0}, service {1}".format(
             role_type, service_type))
         execute_script("retrieve_kerberos_ticket.sh",
-                       [role_type, service_type])
+                    [role_type, service_type])
+
+def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
+
 
     if role_type == "NAMENODE" and service_type == "HDFS":
         if is_leader:
+            retrieve_kerberos_ticket(role_type, service_type)
             logger.info("Host is leader, running {0} {1} cleaning.".format(
                 service_type, role_type))
             execute_script("cloudera_cleaner_script.sh", ["--hdfs"])
         else:
             logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
                 service_type, role_type))
+
     if role_type == "HUE_SERVER" and service_type == "HUE":
         logger.info(
             "Running hue templates compile files cleaning script")
         execute_script("hue_cleaning_script.sh", ["1"])
+
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
+            retrieve_kerberos_ticket(role_type, service_type)
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
                 logger.info(
                     "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
