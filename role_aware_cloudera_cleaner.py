@@ -172,7 +172,7 @@ def main():
     cm_user = config.get("Main", "cm_user")
     cm_pass = config.get("Main", "cm_pass")
     global kerberized
-    kerberized = config.get("Main", "kerberized")
+    kerberized = config.getboolean("Main", "kerberized")
 
     log_file = None
     maxbytes = 200000000
