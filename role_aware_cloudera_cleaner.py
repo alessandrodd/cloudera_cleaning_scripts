@@ -67,7 +67,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
     if role_type == "HUE_SERVER" and service_type == "HUE":
         logger.info(
             "Running hue templates compile files cleaning script")
-        execute_script("hue_cleaning_script.sh", ["1"])
+        execute_script("hue_templates_cleaning_script.sh", ["1"])
+        logger.info(
+            "Running hue excel export temp files cleaning script")
+        execute_script("hue_excel_export_cleaning_script.sh", ["1"])
 
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
