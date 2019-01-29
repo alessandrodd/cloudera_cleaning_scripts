@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Sqoop Cleaning => workaround for SQOOP-3042, fixed in SQOOP 3.0 or CDH 6.1
+
 # Initialize all the option variables.
 # This ensures we are not contaminated by variables from the environment.
 user=""
