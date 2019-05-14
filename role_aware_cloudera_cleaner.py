@@ -19,7 +19,8 @@ API_VERSION = 10
 
 logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M:%S')
-formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%m-%d %H:%M:%S')
+formatter = logging.Formatter(
+    '%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -54,7 +55,27 @@ def retrieve_kerberos_ticket(role_type, service_type):
                        [role_type, service_type])
 
 
-def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_leader):
+def get_config_fixed(resource):
+    # horrible fix, however there seems to be some inconsistency with the object produced by Cloudera API
+    config = resource.get_config(view='full')
+    if isinstance(config, tuple):
+        config = config[0]
+    return config
+
+
+def get_parameter_value(config, parameter):
+    if parameter not in config.keys():
+        return None
+    if config[parameter].value is not None:
+        return config[parameter].value
+    elif config[parameter].default is not None:
+        return config[parameter].default
+    logging.warning("Parameter {0} found but no current value or default value found!".format(
+        parameter))
+    return None
+
+
+def execute_cleaning(cluster_name, cluster_version, service_type, role_type, role_cfg, is_leader):
     if role_type == "NAMENODE" and service_type == "HDFS":
         if is_leader:
             retrieve_kerberos_ticket(role_type, service_type)
@@ -68,10 +89,12 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
     if role_type == "HUE_SERVER" and service_type == "HUE":
         logger.info(
             "Running hue templates compile files cleaning script")
-        execute_script("hue_templates_clean.sh", [params["hue_templates_clean_days"]])
+        execute_script("hue_templates_clean.sh", [
+                       params["hue_templates_clean_days"]])
         logger.info(
             "Running hue excel export temp files cleaning script")
-        execute_script("hue_excel_export_clean.sh", [params["hue_excel_export_clean_days"]])
+        execute_script("hue_excel_export_clean.sh", [
+                       params["hue_excel_export_clean_days"]])
 
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
@@ -79,7 +102,8 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
                 logger.info(
                     "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
-                execute_script("hive_scratchdir_legacy_clean.sh", [params["hive_scratchdir_legacy_clean_days"]])
+                execute_script("hive_scratchdir_legacy_clean.sh", [
+                               params["hive_scratchdir_legacy_clean_days"]])
             else:
                 logger.info("Host is leader, running {0} {1} cleaning.".format(
                     service_type, role_type))
@@ -91,26 +115,41 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
             logger.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
-            execute_script("hive_hs2_resources_clean.sh", [params["hive_hs2_resources_clean_days"]])
+            execute_script("hive_hs2_resources_clean.sh", [
+                           params["hive_hs2_resources_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "HIVE") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         logger.info(
             "Running hive hadoop-unjar cleaning script")
-        execute_script("hive_hadoop_unjar_clean.sh", [params["hive_hadoop_unjar_clean_days"]])
+        execute_script("hive_hadoop_unjar_clean.sh", [
+                       params["hive_hadoop_unjar_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "SQOOP_CLIENT") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         # Try to clean sqoop even if there is no sqoop gateway but there is a YARN nodemanager role
         # (the Sqoop gateway seems not to be necessary for worker nodes)
         logger.info("Running {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("sqoop_compile_clean.sh", ["--days", params["sqoop_compile_clean_days"]])
+        execute_script("sqoop_compile_clean.sh", [
+                       "--days", params["sqoop_compile_clean_days"]])
+
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logger.info("Running {0} {1} cleaning.".format(
                 service_type, role_type))
-            execute_script("impala_catalog_udf_clean.sh", [params["impala_catalog_udf_clean_mins"]])
+            execute_script("impala_catalog_udf_clean.sh", [
+                           params["impala_catalog_udf_clean_mins"]])
+
+    if role_type == "IMPALAD" and service_type == "IMPALA":
+        logger.info("Running {0} {1} cleaning.".format(
+            service_type, role_type))
+        audit_log_dir = get_parameter_value(role_cfg, "audit_event_log_dir")
+        if audit_log_dir:
+            execute_script("impala_impalad_audit_clean.sh", ["--days",
+                                                             params["impala_impalad_audit_clean_days"], "--dir", audit_log_dir])
+
     if role_type == "REGIONSERVER" and service_type == "HBASE":
         logger.info("Running Phoenix {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("phoenix_temp_clean.sh", [params["phoenix_temp_clean_days"]])
+        execute_script("phoenix_temp_clean.sh", [
+                       params["phoenix_temp_clean_days"]])
 
 
 def is_role_leader(service, role_type, role_name):
@@ -147,10 +186,11 @@ def clean_host(cm_api):
                     service = cm.get_service()
                 service_type = service.type
                 role = service.get_role(ref.roleName)
+                role_cfg = get_config_fixed(role)
                 role_type = role.type
                 is_leader = is_role_leader(service, role_type, ref.roleName)
                 execute_cleaning(cluster_name, cluster_version, service_type,
-                                 role_type, is_leader)
+                                 role_type, role_cfg, is_leader)
             break
 
 
@@ -185,7 +225,7 @@ def main():
     cm_pass = config.get("Main", "cm_pass")
     global kerberized
     kerberized = config.getboolean("Main", "kerberized")
-    
+
     global params
     params = dict(config.items('Params'))
 
