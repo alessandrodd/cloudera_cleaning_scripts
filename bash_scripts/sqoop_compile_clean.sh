@@ -4,6 +4,7 @@
 
 # Initialize all the option variables.
 # This ensures we are not contaminated by variables from the environment.
+user=""
 verbose=0
 
 # default values
@@ -78,11 +79,13 @@ show_help() {
 	echo "    Workaround for SQOOP-3042, fixed in SQOOP 3.0 or CDH 6.1"
 	echo "    clean sqoop GATEWAY tmp directory, removing all temp files older"
 	echo "    than DAYS days (default: $SQOOP_CLEANING_LIMIT_DAYS )"
-	echo "Usage: $0 [--days] [--dir SQOOP_TMP_DIR] [-h] [-v]"
+	echo "Usage: $0 [--days] [--dir SQOOP_TMP_DIR] [-h] [-v] [--user=USER1,USER2,...]"
 	echo ""
 	echo "    -h, --help             display this help and exit"
 	echo "    -v                     verbose mode; can be used multiple times for increased"
 	echo "                           verbosity"
+	echo "    --days DAYS            temp dirs older than DAYS days will be deleted"
+	echo "    --dir SQOOP_TMP_DIR    override default audit log directory (${SQOOP_TMP_DIR})"
 	echo "    --user=USR1,USR2       execute the operation for the specified user[s]. If not"
 	echo "                           specified, then it will be executed for all users"
 }
@@ -107,6 +110,12 @@ while :; do
 		;;
 	-v | --verbose)
 		verbose=$((verbose + 1)) # Each -v adds 1 to verbosity.
+		;;
+	--user=?*)
+		user=${1#*=} # Delete everything up to "=" and assign the remainder.
+		;;
+	--user=) # Handle the case of an empty --user=
+		die 'ERROR: "--user" requires a non-empty option argument.'
 		;;
 	--) # End of all options.
 		shift
