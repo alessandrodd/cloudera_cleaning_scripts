@@ -33,7 +33,7 @@ clean_container_logs() {
 	echo 0 > $TEMPFILE
 	if cd ${CONTAINER_LOG_DIR}; then
 			for directory in $(find . -regextype posix-extended -type d -regex './application_[0-9]{13}_[0-9]+' -mtime +${LOG_LIMIT_DAYS}); do 
-			    for file in $(find ${directory} -type f -mtime +${LOG_LIMIT_DAYS})
+			    for file in $(find ${directory} -type f -mtime +${LOG_LIMIT_DAYS}); do
 						echo $file
 						rm -r $file
 						COUNTER=$(($(cat $TEMPFILE) + 1))
