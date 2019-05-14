@@ -34,7 +34,7 @@ params = None
 
 def execute_script(script_name, args):
     full_path = os.path.join(bash_scripts_path, script_name)
-    cmd = [full_path]
+    cmd = ["/bin/bash", full_path]
     cmd = cmd + args
     if debug_mode is not None and debug_mode is False:
         logger.debug(" ".join(map(str, cmd)))
