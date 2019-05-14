@@ -32,7 +32,7 @@ clean_audit() {
 	now=$(date +%s)
 	echo 0 > $TEMPFILE
 	if cd ${IMPALAD_AUDIT_LOG_DIR}; then
-			for file in $(find . -regextype posix-extended -regex './impala_audit_event_log_.+' -mtime +$1); do 
+			for file in $(find . -regextype posix-extended -regex './impala_audit_event_log_.+' -mtime +${AUDIT_LIMIT_DAYS}); do 
 					echo $file
 					rm $file
 					COUNTER=$(($(cat $TEMPFILE) + 1))

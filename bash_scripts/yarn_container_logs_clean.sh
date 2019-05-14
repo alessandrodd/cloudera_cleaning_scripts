@@ -32,8 +32,8 @@ clean_container_logs() {
 	now=$(date +%s)
 	echo 0 > $TEMPFILE
 	if cd ${CONTAINER_LOG_DIR}; then
-			for directory in $(find . -regextype posix-extended -type d -regex './application_[0-9]{13}_[0-9]+' -mtime +$1); do 
-			    for file in $(find ${directory} -type f -mtime +$1)
+			for directory in $(find . -regextype posix-extended -type d -regex './application_[0-9]{13}_[0-9]+' -mtime +${LOG_LIMIT_DAYS}); do 
+			    for file in $(find ${directory} -type f -mtime +${LOG_LIMIT_DAYS})
 						echo $file
 						rm -r $file
 						COUNTER=$(($(cat $TEMPFILE) + 1))
@@ -41,7 +41,7 @@ clean_container_logs() {
 					done
 			done
 			log "find and delete empty dirs"
-			find . -type d -mtime +$1 -empty -delete 
+			find . -type d -mtime +${LOG_LIMIT_DAYS} -empty -delete 
 	fi
 	log "Deleted $(cat $TEMPFILE) files."
 	unlink $TEMPFILE
