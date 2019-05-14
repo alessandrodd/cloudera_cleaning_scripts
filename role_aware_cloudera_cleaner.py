@@ -59,7 +59,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             retrieve_kerberos_ticket(role_type, service_type)
             logger.info("Host is leader, running {0} {1} cleaning.".format(
                 service_type, role_type))
-            execute_script("cloudera_cleaner_script.sh", ["--hdfs"])
+            execute_script("hdfs_expunge.sh", [])
         else:
             logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
                 service_type, role_type))
@@ -82,7 +82,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             else:
                 logger.info("Host is leader, running {0} {1} cleaning.".format(
                     service_type, role_type))
-                execute_script("cloudera_cleaner_script.sh", ["--hive"])
+                execute_script("hive_scratchdir_clean.sh", [])
         else:
             logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
                 service_type, role_type))
@@ -100,7 +100,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         # (the Sqoop gateway seems not to be necessary for worker nodes)
         logger.info("Running {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("cloudera_cleaner_script.sh", ["--sqoop"])
+        execute_script("sqoop_compile_clean.sh", ["--days", "1"])
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logger.info("Running {0} {1} cleaning.".format(
