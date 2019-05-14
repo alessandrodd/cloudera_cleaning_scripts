@@ -130,6 +130,14 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
         execute_script("sqoop_compile_clean.sh", [
                        "--days", params["sqoop_compile_clean_days"]])
 
+    if role_type == "NODEMANAGER" and service_type == "YARN":
+        logger.info("Running {0} {1} cleaning.".format(
+            service_type, role_type))
+        container_log_dir = get_parameter_value(role_cfg, "yarn_nodemanager_log_dirs")
+        if container_log_dir:
+            execute_script("yarn_container_logs_clean.sh", ["--days",
+                                                             params["yarn_container_logs_clean_days"], "--dir", container_log_dir])
+
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logger.info("Running {0} {1} cleaning.".format(
