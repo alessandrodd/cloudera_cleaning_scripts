@@ -4,6 +4,8 @@
 AUDIT_LIMIT_DAYS=90
 IMPALAD_AUDIT_LOG_DIR="/var/log/impalad/audit"
 
+TEMPFILE=/tmp/$$.tmp
+
 log() {
 	printf "$(date): $1\n"
 }
