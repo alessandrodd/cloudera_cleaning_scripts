@@ -28,6 +28,7 @@ bash_scripts_path = os.path.join(script_path, "bash_scripts")
 
 kerberized = False
 debug_mode = False
+params = None
 
 
 def execute_script(script_name, args):
@@ -67,10 +68,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
     if role_type == "HUE_SERVER" and service_type == "HUE":
         logger.info(
             "Running hue templates compile files cleaning script")
-        execute_script("hue_templates_clean.sh", ["1"])
+        execute_script("hue_templates_clean.sh", [params["hue_templates_clean_days"]])
         logger.info(
             "Running hue excel export temp files cleaning script")
-        execute_script("hue_excel_export_clean.sh", ["1"])
+        execute_script("hue_excel_export_clean.sh", [params["hue_excel_export_clean_days"]])
 
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
@@ -78,7 +79,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
                 logger.info(
                     "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
-                execute_script("hive_scratchdir_legacy_clean.sh", ["7"])
+                execute_script("hive_scratchdir_legacy_clean.sh", [params["hive_scratchdir_legacy_clean_days"]])
             else:
                 logger.info("Host is leader, running {0} {1} cleaning.".format(
                     service_type, role_type))
@@ -90,26 +91,26 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
             logger.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
-            execute_script("hive_hs2_resources_clean.sh", ["1"])
+            execute_script("hive_hs2_resources_clean.sh", [params["hive_hs2_resources_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "HIVE") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         logger.info(
             "Running hive hadoop-unjar cleaning script")
-        execute_script("hive_hadoop_unjar_clean.sh", ["7"])
+        execute_script("hive_hadoop_unjar_clean.sh", [params["hive_hadoop_unjar_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "SQOOP_CLIENT") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         # Try to clean sqoop even if there is no sqoop gateway but there is a YARN nodemanager role
         # (the Sqoop gateway seems not to be necessary for worker nodes)
         logger.info("Running {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("sqoop_compile_clean.sh", ["--days", "1"])
+        execute_script("sqoop_compile_clean.sh", ["--days", params["sqoop_compile_clean_days"]])
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logger.info("Running {0} {1} cleaning.".format(
                 service_type, role_type))
-            execute_script("impala_catalog_udf_clean.sh", ["60"])
+            execute_script("impala_catalog_udf_clean.sh", [params["impala_catalog_udf_clean_mins"]])
     if role_type == "REGIONSERVER" and service_type == "HBASE":
         logger.info("Running Phoenix {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("phoenix_temp_clean.sh", ["3"])
+        execute_script("phoenix_temp_clean.sh", [params["phoenix_temp_clean_days"]])
 
 
 def is_role_leader(service, role_type, role_name):
@@ -184,6 +185,9 @@ def main():
     cm_pass = config.get("Main", "cm_pass")
     global kerberized
     kerberized = config.getboolean("Main", "kerberized")
+    
+    global params
+    params = dict(config.items('Params'))
 
     log_file = None
     maxbytes = 20000000
