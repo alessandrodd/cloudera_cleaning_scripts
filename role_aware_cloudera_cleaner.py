@@ -216,9 +216,9 @@ def main():
     parser.add_argument(
         '--cm-pass', type=str, help='Cloudera Manager user\'s password', required=False)
     parser.add_argument(
-        '--kerberized', help='Try to download and use the role keytab before executing actions', action='store_true', default='None')
+        '--kerberized', help='Try to download and use the role keytab before executing actions', action='store_true')
     parser.add_argument(
-        '--debug-mode', help='Prints only the shell scripts without actually running them', action='store_true', default='None')
+        '--debug-mode', help='Prints only the shell scripts without actually running them', action='store_true')
     parser.add_argument(
         '--log-file', type=str, help='Path for the log file', required=False)
     # Array for all arguments passed to script
