@@ -92,6 +92,7 @@ show_help() {
 
 if [ $# -eq 0 ]; then
 	clean_sqoop # Start with defaults if no argument is passed
+	exit
 fi
 
 while :; do

@@ -85,6 +85,7 @@ show_help() {
 
 if [ $# -eq 0 ]; then
 clean_hdfs # Start expunge with defaults if no argument is passed
+exit
 fi
 
 while :; do
