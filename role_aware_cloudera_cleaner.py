@@ -67,10 +67,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
     if role_type == "HUE_SERVER" and service_type == "HUE":
         logger.info(
             "Running hue templates compile files cleaning script")
-        execute_script("hue_templates_cleaning_script.sh", ["1"])
+        execute_script("hue_templates_clean.sh", ["1"])
         logger.info(
             "Running hue excel export temp files cleaning script")
-        execute_script("hue_excel_export_cleaning_script.sh", ["1"])
+        execute_script("hue_excel_export_clean.sh", ["1"])
 
     if role_type == "HIVEMETASTORE" and service_type == "HIVE":
         if is_leader:
@@ -78,7 +78,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
             if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
                 logger.info(
                     "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
-                execute_script("hive_cleaning_script.sh", ["7"])
+                execute_script("hive_scratchdir_legacy_clean.sh", ["7"])
             else:
                 logger.info("Host is leader, running {0} {1} cleaning.".format(
                     service_type, role_type))
@@ -90,11 +90,11 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
             logger.info(
                 "Running hiveserver2 cleaning script because CDH version is < 5.12.0")
-            execute_script("hs2_cleaning_script.sh", ["1"])
+            execute_script("hive_hs2_resources_clean.sh", ["1"])
     if (role_type == "GATEWAY" and service_type == "HIVE") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         logger.info(
             "Running hive hadoop-unjar cleaning script")
-        execute_script("hive_hadoop_unjar_cleaning.sh", ["7"])
+        execute_script("hive_hadoop_unjar_clean.sh", ["7"])
     if (role_type == "GATEWAY" and service_type == "SQOOP_CLIENT") or (role_type == "NODEMANAGER" and service_type == "YARN"):
         # Try to clean sqoop even if there is no sqoop gateway but there is a YARN nodemanager role
         # (the Sqoop gateway seems not to be necessary for worker nodes)
@@ -105,11 +105,11 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, is_
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
             logger.info("Running {0} {1} cleaning.".format(
                 service_type, role_type))
-            execute_script("impala_cleaning_script.sh", ["60"])
+            execute_script("impala_catalog_udf_clean.sh", ["60"])
     if role_type == "REGIONSERVER" and service_type == "HBASE":
         logger.info("Running Phoenix {0} {1} cleaning.".format(
             service_type, role_type))
-        execute_script("phoenix_cleaning_script.sh", ["3"])
+        execute_script("phoenix_temp_clean.sh", ["3"])
 
 
 def is_role_leader(service, role_type, role_name):
