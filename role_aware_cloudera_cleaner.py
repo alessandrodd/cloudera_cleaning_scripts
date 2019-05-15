@@ -17,10 +17,10 @@ from cm_api.api_client import ApiResource
 
 API_VERSION = 10
 
-logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M:%S')
 formatter = logging.Formatter(
     '%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%m-%d %H:%M:%S')
+logging.basicConfig(format=formatter)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -257,8 +257,8 @@ def main():
         log_file = args.log_file
 
     if log_file is not None:
-        handler = RotatingFileHandler(
-            args.log_file, maxBytes=maxbytes, backupCount=5)
+        handler = RotatingFileHandler(args.log_file, maxBytes=maxbytes, backupCount=5)
+        handler.setFormatter(formatter)
         logger.addHandler(handler)
 
     global debug_mode
@@ -267,6 +267,7 @@ def main():
     api = ApiResource(cm_host, cm_port, cm_user, cm_pass, version=API_VERSION)
 
     clean_host(api)
+    logger.info("Cleaning done.")
 
 
 if __name__ == "__main__":
