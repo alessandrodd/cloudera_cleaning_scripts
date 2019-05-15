@@ -87,12 +87,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
                 service_type, role_type))
 
     if role_type == "HUE_SERVER" and service_type == "HUE":
-        logger.info(
-            "Running hue templates compile files cleaning script")
+        logger.info("Running hue templates compile files cleaning script")
         execute_script("hue_templates_clean.sh", [
                        params["hue_templates_clean_days"]])
-        logger.info(
-            "Running hue excel export temp files cleaning script")
+        logger.info("Running hue excel export temp files cleaning script")
         execute_script("hue_excel_export_clean.sh", [
                        params["hue_excel_export_clean_days"]])
 
@@ -118,8 +116,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
             execute_script("hive_hs2_resources_clean.sh", [
                            params["hive_hs2_resources_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "HIVE") or (role_type == "NODEMANAGER" and service_type == "YARN"):
-        logger.info(
-            "Running hive hadoop-unjar cleaning script")
+        logger.info("Running hive hadoop-unjar cleaning script")
         execute_script("hive_hadoop_unjar_clean.sh", [
                        params["hive_hadoop_unjar_clean_days"]])
     if (role_type == "GATEWAY" and service_type == "SQOOP_CLIENT") or (role_type == "NODEMANAGER" and service_type == "YARN"):
@@ -134,13 +131,14 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
         logger.info("Running {0} {1} cleaning.".format(
             service_type, role_type))
         execute_script("yarn_heap_dumps_clean.sh", ["--days",
-                                                             params["yarn_heap_dumps_clean_days"], "--dir", "/data"])
+                                                    params["yarn_heap_dumps_clean_days"], "--dir", "/data"])
         execute_script("yarn_heap_dumps_clean.sh", ["--days",
-                                                             params["yarn_heap_dumps_clean_days"], "--dir", "/tmp"])
-        container_log_dir = get_parameter_value(role_cfg, "yarn_nodemanager_log_dirs")
+                                                    params["yarn_heap_dumps_clean_days"], "--dir", "/tmp"])
+        container_log_dir = get_parameter_value(
+            role_cfg, "yarn_nodemanager_log_dirs")
         if container_log_dir:
             execute_script("yarn_container_logs_clean.sh", ["--days",
-                                                             params["yarn_container_logs_clean_days"], "--dir", container_log_dir])
+                                                            params["yarn_container_logs_clean_days"], "--dir", container_log_dir])
 
     if role_type == "CATALOGSERVER" and service_type == "IMPALA":
         if StrictVersion(cluster_version) < StrictVersion("5.9.2"):
@@ -162,7 +160,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
             service_type, role_type))
         execute_script("phoenix_temp_clean.sh", [
                        params["phoenix_temp_clean_days"]])
-                       
+
 
 def is_role_leader(service, role_type, role_name):
     """Checks if a certain role instance is the leader for that role type.
