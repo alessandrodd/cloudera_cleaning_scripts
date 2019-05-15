@@ -17,9 +17,8 @@ from cm_api.api_client import ApiResource
 
 API_VERSION = 10
 
-formatter = logging.Formatter(
-    '%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%m-%d %H:%M:%S')
-logging.basicConfig(format=formatter)
+logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -258,6 +257,7 @@ def main():
 
     if log_file is not None:
         handler = RotatingFileHandler(args.log_file, maxBytes=maxbytes, backupCount=5)
+        formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
