@@ -133,6 +133,10 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
     if role_type == "NODEMANAGER" and service_type == "YARN":
         logger.info("Running {0} {1} cleaning.".format(
             service_type, role_type))
+        execute_script("yarn_heap_dumps_clean.sh", ["--days",
+                                                             params["yarn_heap_dumps_clean_days"], "--dir", "/data"])
+        execute_script("yarn_heap_dumps_clean.sh", ["--days",
+                                                             params["yarn_heap_dumps_clean_days"], "--dir", "/tmp"])
         container_log_dir = get_parameter_value(role_cfg, "yarn_nodemanager_log_dirs")
         if container_log_dir:
             execute_script("yarn_container_logs_clean.sh", ["--days",
@@ -158,7 +162,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
             service_type, role_type))
         execute_script("phoenix_temp_clean.sh", [
                        params["phoenix_temp_clean_days"]])
-
+                       
 
 def is_role_leader(service, role_type, role_name):
     """Checks if a certain role instance is the leader for that role type.
