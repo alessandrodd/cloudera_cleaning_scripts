@@ -159,7 +159,7 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
         logger.info("Running Phoenix {0} {1} cleaning.".format(
             service_type, role_type))
         execute_script("phoenix_temp_clean.sh", [
-                       params["phoenix_temp_clean_days"]])
+                       params["phoenix_temp_clean_minutes"]])
 
 
 def is_role_leader(service, role_type, role_name):
