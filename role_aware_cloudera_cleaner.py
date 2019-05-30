@@ -82,6 +82,14 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
             logger.info("Host is leader, running {0} {1} cleaning.".format(
                 service_type, role_type))
             execute_script("hdfs_expunge.sh", [])
+            # we also run Hive cleaning from here because it needs to run with HDFS credentials
+            if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
+                logger.info(
+                    "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
+                execute_script("hive_scratchdir_legacy_clean.sh", [
+                               params["hive_scratchdir_legacy_clean_days"]])
+            else:
+                execute_script("hive_scratchdir_clean.sh", [])
         else:
             logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
                 service_type, role_type))
@@ -94,21 +102,6 @@ def execute_cleaning(cluster_name, cluster_version, service_type, role_type, rol
         execute_script("hue_excel_export_clean.sh", [
                        params["hue_excel_export_clean_days"]])
 
-    if role_type == "HIVEMETASTORE" and service_type == "HIVE":
-        if is_leader:
-            retrieve_kerberos_ticket(role_type, service_type)
-            if StrictVersion(cluster_version) < StrictVersion("5.8.4"):
-                logger.info(
-                    "Running 'naive' hive cleaning script because CDH version is < 5.8.4")
-                execute_script("hive_scratchdir_legacy_clean.sh", [
-                               params["hive_scratchdir_legacy_clean_days"]])
-            else:
-                logger.info("Host is leader, running {0} {1} cleaning.".format(
-                    service_type, role_type))
-                execute_script("hive_scratchdir_clean.sh", [])
-        else:
-            logger.info("Not running {0} {1} cleaning because this host is not the leader.".format(
-                service_type, role_type))
     if role_type == "HIVESERVER2" and service_type == "HIVE":
         if StrictVersion(cluster_version) < StrictVersion("5.12.0"):
             logger.info(
