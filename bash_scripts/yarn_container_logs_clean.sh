@@ -35,9 +35,14 @@ clean_container_logs() {
 			for directory in $(find . -regextype posix-extended -type d -regex './application_[0-9]{13}_[0-9]+' -mtime +${LOG_LIMIT_DAYS}); do 
 			    for file in $(find ${directory} -type f -mtime +${LOG_LIMIT_DAYS}); do
 						echo $file
-						rm -r $file
-						COUNTER=$(($(cat $TEMPFILE) + 1))
-						echo $COUNTER > $TEMPFILE
+						# dirty check if file is in use
+						if [[ $(lsof $file) ]]; then
+							echo "This file seem to be currently in use. Will not delete."
+						else
+							rm -r $file
+							COUNTER=$(($(cat $TEMPFILE) + 1))
+							echo $COUNTER > $TEMPFILE
+						fi
 					done
 			done
 			log "find and delete empty dirs"
